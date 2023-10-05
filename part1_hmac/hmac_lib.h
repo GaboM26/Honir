@@ -19,4 +19,9 @@ bool generate_hmac(const char * filename, const char * password,
 void write_data_to_file(std::string filename, std::vector<char> data);
 char *sprint_hex(const char* byte_arr, uint32_t len);
 
+// My modifications
+
+char *pad_pass(const char *password, unsigned int *password_length);
+void do_xor(char *key, char *b);
+
 #endif

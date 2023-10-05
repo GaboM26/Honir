@@ -84,6 +84,10 @@ void write_data_to_file(std::string filename, std::vector<char> data)
         outfile.close();
 }
 
+char *pad_pass(const char *password, unsigned int *password_length){
+    // TODO implement padding
+    return NULL;
+}
 
 /**
  * @brief Reads a file and generate a hmac of its contents, given a password
@@ -104,12 +108,25 @@ bool generate_hmac(const char * filename, const char * password,
     std::streampos file_size;
     std::streampos file_pos = 0;
     bool success = true;
+    
+    // memset(dest,0,SHA256_SIZE_IN_BYTES);
+    char ipad[SHA256_BLOCK_SIZE + 1];
+    char opad[SHA256_BLOCK_SIZE + 1];
+
+    char *key = pad_pass(password, &password_length);
+    bzero(ipad, sizeof(ipad));
+    bzero(opad, sizeof(opad));
+    bcopy(key, ipad, password_length);
+
+    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+        ipad[i] ^= 0x36;
+        ipad[i] ^= 0x5c;
+    }
 
     // a brief example of file IO in C++
     // you don't need to use it if you prefer C
 
     cur_file.open( filename, std::ios::in | std::ios::binary |std::ios::ate );
-
   
     if (!cur_file.is_open()) {
         success = false;
@@ -126,8 +143,6 @@ bool generate_hmac(const char * filename, const char * password,
         }
     }
 
-
-    memset(dest,0,SHA256_SIZE_IN_BYTES);
 
     return success;
 }
