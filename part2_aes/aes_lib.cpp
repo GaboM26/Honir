@@ -104,13 +104,34 @@ int decrypt_cbc(const char* ciphertext, uint64_t ciphertext_length,
     return 0;
 }
 
+void init_iv(char *IV, unsigned int iv_len, int *success){
+    // TODO: get IV from /dev/urandom
+    std::ifstream cur_file;
+    std::streampos file_size;
+    std::streampos file_pos = 0;
+    cur_file.open( RANDOM_LOC, std::ios::in | std::ios::binary |std::ios::ate );
+    if (!cur_file.is_open()) {
+        *success = 0;
+        return ; 
+    }
+
+}
+
+void gen_key(char *key, unsigned int len){
+    // TODO: gen key from password
+}
 encrypted_blob encrypt_file(std::string filename, std::string password)
 {
     char IV[AES_BLOCK_SIZE];
-    memset(IV,0,AES_BLOCK_SIZE); // TODO: get IV from /dev/urandom
+    encrypted_blob return_value;
+    int succ;
+    init_iv(IV, AES_BLOCK_SIZE, &succ);
+
+    if(!succ)
+        return return_value;
 
     char key[SHA256_BLOCK_SIZE];
-    memset(key, 0, SHA256_BLOCK_SIZE); // TODO: gen key from password
+    gen_key(key, SHA256_BLOCK_SIZE); 
 
     std::vector<char> plaintext = get_data_from_file(filename);
 
@@ -129,7 +150,6 @@ encrypted_blob encrypt_file(std::string filename, std::string password)
     }
     free(ciphertext);
 
-    encrypted_blob return_value;
     return_value.ciphertext = return_vector;
     memcpy(return_value.IV, IV, AES_BLOCK_SIZE);
 
@@ -142,7 +162,7 @@ std::vector<char> decrypt_file(std::string filename, std::string password)
     char IV[AES_BLOCK_SIZE];
 
     char key[SHA256_BLOCK_SIZE];
-    memset(key, 0, SHA256_BLOCK_SIZE); // TODO: gen key from password
+    gen_key(key, SHA256_BLOCK_SIZE);
 
     std::vector<char> ciphertext = get_data_from_file(filename);
 

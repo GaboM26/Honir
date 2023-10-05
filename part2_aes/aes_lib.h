@@ -22,4 +22,11 @@ encrypted_blob encrypt_file(std::string filename,
         std::string password);
 std::vector<char> decrypt_file(std::string filename, 
         std::string password);
+
+// My modifications
+void init_iv(char *IV, unsigned int iv_len);
+void gen_key(char *key, unsigned int key_len);
+
+#define RANDOM_LOC "/dev/urandom"
+
 #endif
