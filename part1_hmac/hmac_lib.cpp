@@ -84,9 +84,17 @@ void write_data_to_file(std::string filename, std::vector<char> data)
         outfile.close();
 }
 
-char *pad_pass(const char *password, unsigned int *password_length){
+char *prep_pass(const char *password, unsigned int *password_length){
     // TODO implement padding
-    return NULL;
+    if(*password_length <= SHA256_DATA_SIZE)
+        return (char *) password;
+    
+    char *comp_pass = new char[SHA256_BLOCK_SIZE];
+
+    hash_sha256((BYTE *) password, (BYTE *) comp_pass, *password_length);
+
+    *password_length = SHA256_BLOCK_SIZE;
+    return comp_pass;
 }
 
 /**
@@ -109,18 +117,21 @@ bool generate_hmac(const char * filename, const char * password,
     std::streampos file_pos = 0;
     bool success = true;
     
-    // memset(dest,0,SHA256_SIZE_IN_BYTES);
-    char ipad[SHA256_BLOCK_SIZE + 1];
-    char opad[SHA256_BLOCK_SIZE + 1];
+    SHA256_CTX ctx;
+    unsigned char ipad[SHA256_DATA_SIZE+1];
+    unsigned char opad[SHA256_DATA_SIZE+1];
+    unsigned int plen_actual = password_length;
 
-    char *key = pad_pass(password, &password_length);
+    char *key = prep_pass(password, &plen_actual);
+
     bzero(ipad, sizeof(ipad));
     bzero(opad, sizeof(opad));
     bcopy(key, ipad, password_length);
+    bcopy(key, opad, password_length);
 
-    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+    for(int i=0; i<SHA256_DATA_SIZE; i++){
         ipad[i] ^= 0x36;
-        ipad[i] ^= 0x5c;
+        opad[i] ^= 0x5c;
     }
 
     // a brief example of file IO in C++
@@ -130,19 +141,31 @@ bool generate_hmac(const char * filename, const char * password,
   
     if (!cur_file.is_open()) {
         success = false;
-    } else {
-        //https://cplusplus.com/reference/istream/istream/read/
-        
-        file_size = cur_file.tellg();
-        cur_file.seekg(0, std::ios::beg);
-        char chunk[SHA256_SIZE_IN_BYTES];
-
-        while (file_pos < file_size && cur_file) {
-            cur_file.read(chunk, SHA256_SIZE_IN_BYTES);
-            file_pos += cur_file.gcount();
-        }
+        goto exit;
     }
+    //https://cplusplus.com/reference/istream/istream/read/
+        
+    file_size = cur_file.tellg();
+    cur_file.seekg(0, std::ios::beg);
+    char chunk[SHA256_SIZE_IN_BYTES];
+    sha256_init(&ctx);
+    sha256_update(&ctx,(BYTE *) ipad, SHA256_DATA_SIZE);
+    while (file_pos < file_size && cur_file) {
+        cur_file.read(chunk, SHA256_SIZE_IN_BYTES);
+        sha256_update(&ctx, (BYTE *)chunk, cur_file.gcount());
+        file_pos += cur_file.gcount();
+    }
+    sha256_final(&ctx, (BYTE *) dest);
 
+    sha256_init(&ctx);
+    sha256_update(&ctx, opad, SHA256_DATA_SIZE);
+    sha256_update(&ctx, (BYTE *) dest, SHA256_BLOCK_SIZE);
+    sha256_final(&ctx, (BYTE *) dest);
+
+exit:
+    if(plen_actual != password_length){
+        delete[] key;
+    }
 
     return success;
 }

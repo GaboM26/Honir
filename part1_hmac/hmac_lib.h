@@ -21,7 +21,7 @@ char *sprint_hex(const char* byte_arr, uint32_t len);
 
 // My modifications
 
-char *pad_pass(const char *password, unsigned int *password_length);
-void do_xor(char *key, char *b);
+char *prep_pass(const char *password, unsigned int *password_length);
+#define SHA256_DATA_SIZE 64
 
 #endif
