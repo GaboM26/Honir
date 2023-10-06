@@ -12,14 +12,35 @@
 #include <iostream>
 #include <fstream>
 
+using namespace std;
+
+enum Mode { list, add, extract};
 
 class CStoreObject
 {
     private:        
-    public: 
+        Mode mode;
+        std::vector<std::string> files;
+        std::string password; 
+        std::string archive_name;
+        string err_msg;
+        vector<string> retval;
+        bool err;
+
+        void get_hash(char *buf);
+        bool verify_hash(ifstream file);
+        void list_files();
+        void add_files();
+        void extract_files();
+        Mode determine_mode(string);
+
+    public:
         
         CStoreObject(CStoreArgs user_args);
-        ~CStoreObject();
+        bool has_err();
+        void do_operation();
+        string get_mode();
+
 };
 
 
