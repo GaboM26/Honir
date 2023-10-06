@@ -1,6 +1,39 @@
 #include "aes_lib.h"
 
+void do_cbc_decrypt_xor(char *dest, const char *prev){
+    for(int i=0; i<AES_BLOCK_SIZE; i++){
+        dest[i] ^= prev[i];
+    }
 
+}
+void pad_plaintext(char *plaintext, uint64_t *len, uint64_t length_goal)
+{
+    if(*len%AES_BLOCK_SIZE == 0)
+        return ;
+    
+    int must_pad = length_goal - *len;
+    plaintext += *len;
+    for(int i=0; i<must_pad; i++){
+        *plaintext = '\0';
+    }
+    *len = length_goal;
+}
+
+void do_cbc_encrypt(char *ciphertext, const char *plaintext,
+    uint64_t plaintext_length, WORD *keysched, const char *IV, uint64_t ciphertext_length)
+{
+    char pad_pt[ciphertext_length];
+    memcpy(pad_pt, plaintext, plaintext_length);
+    pad_plaintext(pad_pt, &plaintext_length, ciphertext_length); //TODO: Maybe we don't pad
+    // TODO: Write your own encryption
+    aes_encrypt_cbc((BYTE *) plaintext, 
+        plaintext_length, 
+        (BYTE *) ciphertext, 
+        keysched, 
+        SHA256_BLOCK_SIZE*8, 
+        (BYTE *) IV);
+
+}
 /**
  * @brief encrypts plaintext using AES CBC using key. 
  * buffer allocated in ciphertext must be freed. 
@@ -21,6 +54,9 @@ int encrypt_cbc(const char * plaintext, uint64_t plaintext_length,
     const char * IV, char ** ciphertext,
     uint64_t * ciphertext_length, char* key )
 {
+    WORD key_sched[60];
+    aes_key_setup((BYTE *) key, key_sched, SHA256_BLOCK_SIZE*8);
+
     *ciphertext_length = plaintext_length + 1;
     //uint64_t padding_length = 0;
     if (*ciphertext_length % AES_BLOCK_SIZE != 0) {
@@ -34,7 +70,8 @@ int encrypt_cbc(const char * plaintext, uint64_t plaintext_length,
     }
     memset(*ciphertext, 0, *ciphertext_length);
     
-    memcpy(*ciphertext, plaintext, plaintext_length); // encryption should take place here
+    do_cbc_encrypt(*ciphertext, plaintext, plaintext_length,
+        key_sched, IV, *ciphertext_length); // encryption should take place here
 
     return 0;
 }
@@ -64,6 +101,42 @@ std::vector<char> get_data_from_file(std::string filename)
     return file_contents;
 }
 
+void remove_padding(char *arr, uint64_t *len){
+    //TODO: test this with a simple encrypt/decrypt routine
+    char *end_arr;
+    end_arr = arr + *len-1;
+    for(int i=0; i<AES_BLOCK_SIZE; i++){
+        if(end_arr[i] != 0)
+            break ;
+    }
+    *len = end_arr-arr+1;
+}
+void do_cbc_decrypt(const char *ciphertext, char *plaintext,
+    uint64_t *plaintext_length, WORD *keysched, 
+    const char *IV, uint64_t ciphertext_length)
+{
+    char *end_ct = (char *) ciphertext + ciphertext_length;
+    char buff[ciphertext_length];
+    char *end_buf = buff + ciphertext_length;
+    char *last_block = NULL;
+
+    for(uint64_t i=0; i<(ciphertext_length/AES_BLOCK_SIZE); i++){
+        end_buf -= AES_BLOCK_SIZE;
+        aes_decrypt((BYTE *) end_ct-(i+1)*AES_BLOCK_SIZE, (BYTE *) end_buf, keysched, 
+        SHA256_BLOCK_SIZE*8);
+
+        if(!last_block){
+            last_block = end_buf;
+            continue ;
+        }
+        do_cbc_decrypt_xor(last_block, end_buf);
+        last_block = end_buf;
+    }
+    do_cbc_decrypt_xor(last_block, IV);
+
+    remove_padding(buff, plaintext_length);
+    memcpy(plaintext, buff, *plaintext_length);
+}
 /**
  * @brief decrypts ciphertext using key and IV stores result in buffer and updates 
  * plaintext with pointer to buffer. Note that decrypt will remove null byte padding. 
@@ -82,6 +155,8 @@ int decrypt_cbc(const char* ciphertext, uint64_t ciphertext_length,
     const char * IV, char ** plaintext, uint64_t * plaintext_length, 
     char* key)
 {
+    WORD key_sched[60];
+    aes_key_setup((BYTE *) key, key_sched, SHA256_BLOCK_SIZE*8);
     *plaintext_length = ciphertext_length;
     *plaintext = (char *)  malloc(*plaintext_length);
     if(*plaintext == NULL) {
@@ -89,7 +164,7 @@ int decrypt_cbc(const char* ciphertext, uint64_t ciphertext_length,
         return -1;
     }
 
-    memcpy(*plaintext, ciphertext, *plaintext_length); // decryption should take place here.
+    do_cbc_decrypt(ciphertext, *plaintext, plaintext_length, key_sched, IV, ciphertext_length);
 
     // remove null byte padding
     char * plaintext_ptr = *plaintext;
@@ -105,21 +180,30 @@ int decrypt_cbc(const char* ciphertext, uint64_t ciphertext_length,
 }
 
 void init_iv(char *IV, unsigned int iv_len, int *success){
-    // TODO: get IV from /dev/urandom
     std::ifstream cur_file;
-    std::streampos file_size;
-    std::streampos file_pos = 0;
     cur_file.open( RANDOM_LOC, std::ios::in | std::ios::binary |std::ios::ate );
     if (!cur_file.is_open()) {
         *success = 0;
         return ; 
     }
+    cur_file.read(IV, AES_BLOCK_SIZE);
 
+    *success = 1;
+
+    if(cur_file.gcount() != AES_BLOCK_SIZE)
+        *success = 0;
+    
 }
 
-void gen_key(char *key, unsigned int len){
-    // TODO: gen key from password
+void gen_key(std::string pass_str, char *key){
+    char password[pass_str.size()+1];
+    strcpy(password, pass_str.c_str());
+    hash_sha256((BYTE *)password, (BYTE *) key, pass_str.size());
+    for(int i=0; i<PREP_KEY_NUMHASH-1; i++){
+        hash_sha256((BYTE *)key, (BYTE *) key, SHA256_BLOCK_SIZE);
+    }
 }
+
 encrypted_blob encrypt_file(std::string filename, std::string password)
 {
     char IV[AES_BLOCK_SIZE];
@@ -129,9 +213,9 @@ encrypted_blob encrypt_file(std::string filename, std::string password)
 
     if(!succ)
         return return_value;
-
+    
     char key[SHA256_BLOCK_SIZE];
-    gen_key(key, SHA256_BLOCK_SIZE); 
+    gen_key(password, key); 
 
     std::vector<char> plaintext = get_data_from_file(filename);
 
@@ -160,9 +244,14 @@ std::vector<char> decrypt_file(std::string filename, std::string password)
 {
     std::vector<char> return_vector;
     char IV[AES_BLOCK_SIZE];
+    int succ;
+    init_iv(IV, AES_BLOCK_SIZE, &succ);
+
+    if(!succ)
+        return return_vector;
 
     char key[SHA256_BLOCK_SIZE];
-    gen_key(key, SHA256_BLOCK_SIZE);
+    gen_key(password, key);
 
     std::vector<char> ciphertext = get_data_from_file(filename);
 

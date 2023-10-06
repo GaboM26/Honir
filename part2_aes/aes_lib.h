@@ -25,8 +25,9 @@ std::vector<char> decrypt_file(std::string filename,
 
 // My modifications
 void init_iv(char *IV, unsigned int iv_len);
-void gen_key(char *key, unsigned int key_len);
+void gen_key(std::string pass_str, char *key);
 
 #define RANDOM_LOC "/dev/urandom"
+#define PREP_KEY_NUMHASH 10000
 
 #endif
