@@ -26,18 +26,19 @@ void do_cbc_encrypt(char *ciphertext, const char *plaintext,
     memcpy(pad_pt, plaintext, plaintext_length);
     pad_plaintext(pad_pt, &plaintext_length, padding_length);
 
-    const char *pt = plaintext;
+    const char *pt = pad_pt;
     const char *prev = IV;
     char *ct_move = ciphertext;
     char buff[AES_BLOCK_SIZE];
     for(uint64_t i=0; i<(plaintext_length/AES_BLOCK_SIZE); i++){
-        pt = plaintext + i*AES_BLOCK_SIZE;
+        pt = pad_pt + i*AES_BLOCK_SIZE;
         memcpy(buff, pt, AES_BLOCK_SIZE);
         do_cbc_xor(buff, prev);
         aes_encrypt((BYTE *) buff, (BYTE *) ct_move, keysched, SHA256_BLOCK_SIZE*8);
         prev = ct_move;
         ct_move += AES_BLOCK_SIZE;
     }
+
 
 }
 /**
@@ -238,11 +239,6 @@ std::vector<char> decrypt_file(std::string filename, std::string password)
 {
     std::vector<char> return_vector;
     char IV[AES_BLOCK_SIZE];
-    int succ;
-    init_iv(IV, AES_BLOCK_SIZE, &succ);
-
-    if(!succ)
-        return return_vector;
 
     char key[SHA256_BLOCK_SIZE];
     gen_key(password, key);
