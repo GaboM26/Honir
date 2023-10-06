@@ -32,71 +32,60 @@ CStoreArgs::CStoreArgs(int argc, char ** argv)
     std::string arg2;
     action = "";
     valid = false;
-    if (argc >=3 )
-    {
-        valid = true;
-        arg1 = argv[1];
-        if (arg1 == "add" || 
-                arg1 == "extract") {
+    if(argc<3){
+        goto invalid;
+    }
+    valid = true;
+    arg1 = argv[1];
+    if (arg1 == "add" || arg1 == "extract") {
+        action = arg1;
+    } else if (arg1 == "list") {
+        if (argc == 3){
             action = arg1;
-        } else if (arg1 == "list") {
-            if (argc == 3)
-            {
-                action = arg1;
-                archive_name = argv[2];
-                valid = true;
-            } else
-            {
+            archive_name = argv[2];
+            valid = true;
+        } else{
+            valid = false;
+        }
+            
+    } else {
+        valid = false;
+        goto invalid;
+    }
+    if ( valid &&action != "list" && action != ""){
+        if ( argc >=4 )
+        {
+            unsigned int argc_offset = 0;
+            arg2 = argv[2];
+                
+        if (
+            arg2 == "-p" && 
+            argc >= 6 // otherwise, support edge 
+                    // case where archivename == "-p"
+                ) {
+            password = argv[3];
+            argc_offset = 2;
+        }
+        else{
+            char * temp_password = getpass("\tPlease enter a password to use: ");
+            password = temp_password;
+            free(temp_password);
+        }
+        if (password.length() < 1 ) {
+            error_and_quit("An empty password is not allowed.");
+        }
+        archive_name = argv[2+argc_offset];
+        for ( int index = 3+argc_offset; index < argc; index ++){
+            files.push_back(argv[index]);
+            if (files.back().length() > MAX_FILENAME_LENGTH) {
                 valid = false;
             }
-            
+        }
         } else {
             valid = false;
         }
-
-        if ( valid &&
-                action != "list" && 
-                action != ""
-                )
-        {
-            if ( argc >=4 )
-            {
-                unsigned int argc_offset = 0;
-                arg2 = argv[2];
-                
-                if (
-                    arg2 == "-p" && 
-                    argc >= 6 // otherwise, support edge 
-                                // case where archivename == "-p"
-                    ) {
-                    password = argv[3];
-                    argc_offset = 2;
-                }
-                else
-                {
-                    char * temp_password = getpass("\tPlease enter a password to use: ");
-                    password = temp_password;
-                    free(temp_password);
-                }
-                if (password.length() < 1 ) {
-                    error_and_quit("An empty password is not allowed.");
-                }
-                archive_name = argv[2+argc_offset];
-                for (    int index = 3+argc_offset; 
-                        index < argc; 
-                        index ++
-                    )
-                {
-                    files.push_back(argv[index]);
-                    if (files.back().length() > MAX_FILENAME_LENGTH) {
-                        valid = false;
-                    }
-                }
-            } else {
-                valid = false;
-            }
-        }
     }
+invalid:
     if (!valid) {
         show_usage(argv[0]);
         exit(1);

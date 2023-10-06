@@ -10,6 +10,8 @@
 
 #define MAX_FILENAME_LENGTH 20
 
+void error_and_quit(std::string err);
+void show_usage(std::string name);
 class CStoreArgs 
 {
     private:

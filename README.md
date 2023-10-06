@@ -15,3 +15,5 @@ Please refer to the assignment pdf prompt released in Courseworks for the specif
 Replace this README to document edge cases, testing, or deviations from the specification.
 
 Further, put your documentation for Part3 in this file.
+
+## Part 3 Documentation
