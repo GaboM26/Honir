@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo apt-get update
 #python3 for tester
 which python3 >/dev/null 2>/dev/null || (
     echo [+] installing python3
