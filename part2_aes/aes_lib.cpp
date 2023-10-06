@@ -108,29 +108,28 @@ std::vector<char> get_data_from_file(std::string filename)
 }
 
 void do_cbc_decrypt(const char *ciphertext, char *plaintext,
-    uint64_t *plaintext_length, WORD *keysched, 
-    const char *IV, uint64_t ciphertext_length)
+    WORD *keysched, const char *IV, uint64_t ciphertext_length)
 {
-    char *end_ct = (char *) ciphertext + ciphertext_length;
     char buff[ciphertext_length];
-    char *end_buf = buff + ciphertext_length;
-    char *last_block = NULL;
+    char *end_ct = (char *) ciphertext + ciphertext_length - AES_BLOCK_SIZE;
+    char *end_buf = buff + ciphertext_length - AES_BLOCK_SIZE;
+    char *last_block;
 
-    for(uint64_t i=0; i<(ciphertext_length/AES_BLOCK_SIZE); i++){
-        end_buf -= AES_BLOCK_SIZE;
-        aes_decrypt((BYTE *) end_ct-(i+1)*AES_BLOCK_SIZE, (BYTE *) end_buf, keysched, 
+    aes_decrypt((BYTE *) end_ct, (BYTE *) end_buf, keysched, 
         SHA256_BLOCK_SIZE*8);
 
-        if(!last_block){
-            last_block = end_buf;
-            continue ;
-        }
-        do_cbc_xor(last_block, end_buf);
+    for(uint64_t i=0; i<(ciphertext_length/AES_BLOCK_SIZE)-1; i++){
         last_block = end_buf;
-    }
-    do_cbc_xor(last_block, IV);
+        end_buf -= AES_BLOCK_SIZE;
+        end_ct -= AES_BLOCK_SIZE;
+        do_cbc_xor(last_block, end_ct);
+        aes_decrypt((BYTE *) end_ct, (BYTE *) end_buf, keysched, 
+        SHA256_BLOCK_SIZE*8);
 
-    memcpy(plaintext, buff, *plaintext_length);
+    }
+    do_cbc_xor(buff, IV);
+
+    memcpy(plaintext, buff, sizeof(buff));
 }
 /**
  * @brief decrypts ciphertext using key and IV stores result in buffer and updates 
@@ -159,7 +158,7 @@ int decrypt_cbc(const char* ciphertext, uint64_t ciphertext_length,
         return -1;
     }
 
-    do_cbc_decrypt(ciphertext, *plaintext, plaintext_length, key_sched, IV, ciphertext_length);
+    do_cbc_decrypt(ciphertext, *plaintext, key_sched, IV, ciphertext_length);
 
     // remove null byte padding
     char * plaintext_ptr = *plaintext;
