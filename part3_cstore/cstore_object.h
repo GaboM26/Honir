@@ -41,11 +41,13 @@ class CStoreObject
 
         void pad_buffer(vector<char> *buf, int len);
         void wrongfully_detected_end(vector<char> *buf, int);
+        void push_e_to_buf(vector<char> *buf, encrypted_blob e);
 
         void my_encrypt_metadata(vector<char> *buf);
         vector<char> my_decrypt_metadata(vector<char> buf);
 
         void add_file_blocks(vector<char> *buf, int);
+        void fill_buff_files(vector<char> *buff);
         Mode determine_mode(string);
 
     public:

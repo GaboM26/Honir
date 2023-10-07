@@ -9,6 +9,9 @@ used to find a reliable way to check if files exist using c++
 3. https://stackoverflow.com/questions/45616132/how-to-use-stdmove-to-move-char-to-a-vectorchar#:~:text=You%20cannot%20move%20a%20char,Use%20std%3A%3Astring%20instead.
 Used to find a way to move char[] to a vector
 
+4. https://stackoverflow.com/questions/2390912/checking-for-an-empty-file-in-c
+used to find code that checks if a file is empty
+
 /* replace with your name and UNI */
 David Gabriel Millares Bellido
 DGM2148

@@ -12,6 +12,11 @@ bool file_exists(string filename){
     return file.good();
 }
 
+bool file_is_empty(string filename){
+    ifstream file(filename.c_str());
+    return file.peek() == std::ifstream::traits_type::eof();
+}
+
 streampos get_file_length(ifstream file){
     streampos file_size;
 
@@ -184,7 +189,6 @@ void CStoreObject::make_metadata(vector<char> *buff){
     buff->push_back('%'); //separator
 
     add_file_blocks(buff, total_bytes);
-    print_vector_as_hex(*buff);
 }
 
 void CStoreObject::make_MAC(vector<char> *buff){
@@ -192,8 +196,28 @@ void CStoreObject::make_MAC(vector<char> *buff){
 
 }
 
-void fill_buff_files(vector<char> *buff){
+void CStoreObject::push_e_to_buf(vector<char> *buf, encrypted_blob e){
+    for(uint64_t i=0; i<AES_BLOCK_SIZE; i++){
+        buf->push_back(e.IV[i]);
+    }
+
+    for(uint64_t i=0; i<e.ciphertext.size(); i++){
+        buf->push_back(e.ciphertext[i]);
+    }
+}
+
+void CStoreObject::fill_buff_files(vector<char> *buf){
     //TODO: append buff files to vector
+    vector<string>::iterator iter;
+    for(iter = files.begin(); iter<files.end(); iter++){
+        if(!file_exists(*iter) || file_is_empty(*iter)){
+            err = true;
+            err_msg = "error: file " + *iter + "does not exist or is empty";
+        }
+        auto encrypted = encrypt_file(*iter, password);
+        push_e_to_buf(buf, encrypted);
+        pad_buffer(buf, AES_BLOCK_SIZE);
+    }
 
 }
 
@@ -233,7 +257,6 @@ void CStoreObject::my_encrypt_metadata(vector<char> *buf){
 }
 
 void CStoreObject::add_files(){
-    cout << "ADDING FILES" << endl;
     vector<char> buff;
     if(file_exists(archive_name)){
         err = true;
@@ -252,7 +275,6 @@ void CStoreObject::add_files(){
 
 void CStoreObject::extract_files(){
     //TODO: Unencrypt archive's files
-    cout << "EXTRACTING FILES" << endl;
 
 
 }
