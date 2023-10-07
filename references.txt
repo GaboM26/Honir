@@ -3,6 +3,11 @@ Reference List for W4181 Homework
 1.  https://www.digitalocean.com/community/tutorials/convert-string-to-char-array-c-plus-plus
 used to learn how to convert str into char *.
 
+2. https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exists-using-standard-c-c11-14-17-c
+used to find a reliable way to check if files exist using c++
+
+3. https://stackoverflow.com/questions/45616132/how-to-use-stdmove-to-move-char-to-a-vectorchar#:~:text=You%20cannot%20move%20a%20char,Use%20std%3A%3Astring%20instead.
+Used to find a way to move char[] to a vector
 
 /* replace with your name and UNI */
 David Gabriel Millares Bellido
