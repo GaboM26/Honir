@@ -38,7 +38,6 @@ class CStoreObject
         void extract_files();
 
         void make_metadata(vector<char> *buf);
-        vector<char> read_metadata(vector<char> *md);
         int parse_metadata(vector<char> md);
 
         void pad_buffer(vector<char> *buf, int len);
@@ -46,12 +45,14 @@ class CStoreObject
         void push_e_to_buf(vector<char> *buf, encrypted_blob e);
 
         void my_encrypt_metadata(vector<char> *buf);
-        vector<char> my_decrypt_metadata(vector<char> buf);
+        vector<char> my_decrypt(vector<char> buf, string pass);
 
         void add_file_blocks(vector<char> *buf, int);
         void fill_buff_files(vector<char> *buff);
 
         void get_index_array(int *);
+        void parse_and_extract(vector<char> , int *);
+        vector<char> get_file_from_buff(vector<char> *data, string password);
 
         Mode determine_mode(string);
 

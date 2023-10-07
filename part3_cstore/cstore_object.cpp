@@ -87,32 +87,7 @@ void CStoreObject::wrongfully_detected_end(vector<char> *md, int fix){
     }
 }
 
-vector<char> CStoreObject::read_metadata(vector<char> *data){
-    //TODO parse metadata
-    vector<char> metadata;
-    vector<char>::iterator iter = data->begin();
-    int count_null = 0;
-    while(count_null != AES_BLOCK_SIZE){
-        if(*iter == '\0'){
-            count_null++;
-        }
-        else{
-            if(count_null!=0){
-                wrongfully_detected_end(&metadata, count_null);
-                count_null = 0;
-            }
-            metadata.push_back(*iter);
-        }
-        iter++;
-    }
-    metadata = my_decrypt_metadata(metadata);
-    data->erase(data->begin(), iter);//remain only with data 
-    return metadata;
-
-}
-
 int CStoreObject::parse_metadata(vector<char> md){
-    //TODO: make list and place in retval
     char buff[20]; //file_character names > 20
     char *filler = buff;
     vector<char>::iterator iter;
@@ -160,7 +135,7 @@ void CStoreObject::list_files(){
     }
 
     vector<char> files_data = get_data_from_file(archive_name);
-    vector<char> metadata = read_metadata(&files_data);
+    vector<char> metadata = get_file_from_buff(&files_data, archive_name);
     parse_metadata(metadata);
 }
 
@@ -212,7 +187,6 @@ void CStoreObject::push_e_to_buf(vector<char> *buf, encrypted_blob e){
 }
 
 void CStoreObject::fill_buff_files(vector<char> *buf){
-    //TODO: append buff files to vector
     vector<string>::iterator iter;
     for(iter = files.begin(); iter<files.end(); iter++){
         if(!file_exists(*iter) || file_is_empty(*iter)){
@@ -226,13 +200,13 @@ void CStoreObject::fill_buff_files(vector<char> *buf){
 
 }
 
-vector<char> CStoreObject::my_decrypt_metadata(vector<char> buf){
+vector<char> CStoreObject::my_decrypt(vector<char> buf, string password){
     string temp_name = archive_name + "_temp.txt";
     if(!err)
         write_data_to_file(temp_name, buf);
 
     std::vector<char> decrypted;
-    decrypted = decrypt_file(temp_name, archive_name);
+    decrypted = decrypt_file(temp_name, password);
     if(remove(temp_name.c_str())){
         err = true;
         err_msg = "error: could not remove temp file";
@@ -280,11 +254,12 @@ void CStoreObject::add_files(){
 }
 
 void CStoreObject::get_index_array(int *ind){
-    memset(ind, -1, files.size());
     for(uint64_t i=0; i<files.size(); i++){
+        ind[i] = -1;
         for(uint64_t j=0; j<files_in_archive.size(); j++){
-            if(files[i] == files_in_archive[j])
+            if(files[i] == files_in_archive[j]){
                 ind[i] = j;
+            }
         }
         if(ind[i] == -1){
             err = true;
@@ -295,15 +270,48 @@ void CStoreObject::get_index_array(int *ind){
     sort(ind, ind+files.size());
 }
 
+vector<char> CStoreObject::get_file_from_buff(vector<char> *data, string password){
+    vector<char> file_data;
+    vector<char>::iterator iter = data->begin();
+    int count_null = 0;
+    while(count_null != AES_BLOCK_SIZE){
+        if(*iter == '\0'){
+            count_null++;
+        }
+        else{
+            if(count_null!=0){
+                wrongfully_detected_end(&file_data, count_null);
+                count_null = 0;
+            }
+            file_data.push_back(*iter);
+        }
+        iter++;
+    }
+    file_data = my_decrypt(file_data, password);
+    data->erase(data->begin(), iter);//remain only with leftover data 
+    return file_data;
+
+}
+
+void CStoreObject::parse_and_extract(vector<char> data, int *inds){
+    vector<char> curr_file;
+
+    for(uint64_t i=0; i<files_in_archive.size(); i++){
+        curr_file = get_file_from_buff(&data, password);
+        if((uint64_t)*inds == i){
+            write_data_to_file(files_in_archive[i] + "_extract.txt", curr_file);
+        }
+    }
+}
+
 void CStoreObject::extract_files(){
-    //TODO: Unencrypt archive's files
     if(!file_exists(archive_name)){
         err = true;
         err_msg = "error: archive doesn't exist";
         return ;
     }
     vector<char> files_data = get_data_from_file(archive_name);
-    vector<char> metadata = read_metadata(&files_data);
+    vector<char> metadata = get_file_from_buff(&files_data, archive_name);
     uint64_t numfiles = parse_metadata(metadata);
 
     if(numfiles < files.size()){
@@ -313,6 +321,9 @@ void CStoreObject::extract_files(){
     }
     int indices[files.size()];
     get_index_array(indices);
+
+    if(!err)
+        parse_and_extract(files_data, indices);
 
 }
 
