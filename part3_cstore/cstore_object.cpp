@@ -25,7 +25,7 @@ streampos get_file_length(ifstream file){
 
 ifstream open_file(string filename, int *success ){
     ifstream cur_file;
-    cur_file.open( filename, std::ios::in | std::ios::binary |std::ios::out );
+    cur_file.open( filename, std::ios::in | std::ios::binary);
   
     if (!cur_file.is_open()) {
         *success = -1;
@@ -57,7 +57,6 @@ CStoreObject::CStoreObject(CStoreArgs user_args)
     err = false;
 }
 
-
 bool CStoreObject::has_retval(){
     return mode == list;
 }
@@ -77,42 +76,82 @@ bool CStoreObject::verify_hash(ifstream file){
 
 }
 
-void CStoreObject::read_metadata(ifstream *file, char *md){
-    //TODO reads metadata
-
+void CStoreObject::wrongfully_detected_end(vector<char> *md, int fix){
+    for(int i=0; i<fix; i++){
+        md->push_back('\0');
+    }
 }
 
-int CStoreObject::parse_metadata(char *md, int *num_files){
+vector<char> CStoreObject::read_metadata(vector<char> *data){
     //TODO parse metadata
-    return 0;
+    vector<char> metadata;
+    vector<char>::iterator iter = data->begin();
+    int count_null = 0;
+    while(count_null != AES_BLOCK_SIZE){
+        if(*iter == '\0'){
+            count_null++;
+        }
+        else{
+            if(count_null!=0){
+                wrongfully_detected_end(&metadata, count_null);
+                count_null = 0;
+            }
+            metadata.push_back(*iter);
+        }
+        iter++;
+    }
+    metadata = my_decrypt_metadata(metadata);
+    data->erase(data->begin(), iter);//remain only with data 
+    return metadata;
 
 }
 
-void CStoreObject::make_file_list(ifstream *file, 
-                                int num_blocks, int num_files){
+void CStoreObject::parse_metadata(vector<char> md){
     //TODO: make list and place in retval
-    vector<string> buff;
-
+    char buff[20]; //file_character names > 20
+    char *filler = buff;
+    vector<char>::iterator iter;
+    for(iter=md.begin(); iter<md.end(); iter++){
+        if(*iter == '%'){
+            *filler = '\0';
+            break ;
+        }
+        *filler++ = *iter;
+    }
+    iter++;
+    string temp(buff);
+    if(temp.size()>16){
+        err =true;
+        err_msg="error: couldnt recover metadata, data corrupted";
+    }
+    int numfiles = stoi(temp);
+    filler = buff;
+    int i;
+    for(i=0; i<numfiles && iter!=md.end(); iter++){
+        if(*iter == '%'){
+            *filler = '\0';
+            string str(buff);
+            retval.push_back(str);
+            filler = buff;
+            i++;
+        }
+        *filler++ = *iter;
+    }
+    if(i != numfiles){
+        err = true;
+        err_msg = "error: Data files not found, possible tampering";
+    }
 }
 
 void CStoreObject::list_files(){
-    //TODO: Find way to list files (use archive_name as key)
-    ifstream file;
-    char metadata[AES_BLOCK_SIZE];
-    int succ, num_files, num_blocks;
     if(!file_exists(archive_name)){
         err = true;
         err_msg = "error: archive does not exist";
     }
-    file = open_file(archive_name, &succ);
-    if(succ){
-        err = true;
-        err_msg = "i/o error: couldn't open file";
-    }
 
-    read_metadata(&file, metadata);
-    num_blocks = parse_metadata(metadata, &num_files);
-    make_file_list(&file, num_blocks, num_files);
+    vector<char> files_data = get_data_from_file(archive_name);
+    vector<char> metadata = read_metadata(&files_data);
+    parse_metadata(metadata);
 }
 
 void CStoreObject::pad_buffer(vector<char> *buff, int len){
@@ -128,35 +167,24 @@ void CStoreObject::add_file_blocks(vector<char> *buff, int totalbytes){
         str_fill_buff(buff, curr);
         buff->push_back('%');
     }
-    int mustpad = AES_BLOCK_SIZE - totalbytes%AES_BLOCK_SIZE;
-    pad_buffer(buff, mustpad);
 }
 
 void CStoreObject::make_metadata(vector<char> *buff){
     int file_num = files.size();
     int total_bytes = 0;
-    int num_blocks, pad_len;
-    string nb_str, fn_str;
+    string fn_str;
     vector<string>::iterator iter;
     for(iter = files.begin(); iter < files.end(); iter++){
         string curr = *iter;
         int strlen = curr.size();
         total_bytes += strlen+1;
     }
-    num_blocks = (total_bytes+AES_BLOCK_SIZE)/AES_BLOCK_SIZE;
-    nb_str = to_string(num_blocks);
     fn_str = to_string(file_num);
     str_fill_buff(buff, fn_str);
     buff->push_back('%'); //separator
-    str_fill_buff(buff, nb_str);
 
-    pad_len = AES_BLOCK_SIZE - nb_str.size() - 1 - fn_str.size();
-    if(pad_len < 0){
-        err = true;
-        err_msg = "exceeded metadata length";
-    }
-    pad_buffer(buff, pad_len);
     add_file_blocks(buff, total_bytes);
+    print_vector_as_hex(*buff);
 }
 
 void CStoreObject::make_MAC(vector<char> *buff){
@@ -167,6 +195,20 @@ void CStoreObject::make_MAC(vector<char> *buff){
 void fill_buff_files(vector<char> *buff){
     //TODO: append buff files to vector
 
+}
+
+vector<char> CStoreObject::my_decrypt_metadata(vector<char> buf){
+    string temp_name = archive_name + "_temp.txt";
+    if(!err)
+        write_data_to_file(temp_name, buf);
+
+    std::vector<char> decrypted;
+    decrypted = decrypt_file(temp_name, archive_name);
+    if(remove(temp_name.c_str())){
+        err = true;
+        err_msg = "error: could not remove temp file";
+    }
+    return decrypted;
 }
 
 void CStoreObject::my_encrypt_metadata(vector<char> *buf){
@@ -185,12 +227,13 @@ void CStoreObject::my_encrypt_metadata(vector<char> *buf){
     
     if(remove(temp_name.c_str())){
         err = true;
-        err_msg = "error: could not remove temp file";
+        err_msg = "error: encrypt could not remove temp file";
     }
 
 }
 
 void CStoreObject::add_files(){
+    cout << "ADDING FILES" << endl;
     vector<char> buff;
     if(file_exists(archive_name)){
         err = true;
@@ -198,6 +241,8 @@ void CStoreObject::add_files(){
     }
     make_metadata(&buff);
     my_encrypt_metadata(&buff);
+    pad_buffer(&buff, AES_BLOCK_SIZE);
+    
     fill_buff_files(&buff); //adds files and encrypts
     make_MAC(&buff); //adds a MAC
     
@@ -207,15 +252,17 @@ void CStoreObject::add_files(){
 
 void CStoreObject::extract_files(){
     //TODO: Unencrypt archive's files
+    cout << "EXTRACTING FILES" << endl;
+
 
 }
 
 void CStoreObject::do_operation(){
     switch(mode)
     {
-        case list : list_files();
-        case add : add_files();
-        case extract : extract_files();
+        case list : list_files(); break;
+        case add : add_files(); break;
+        case extract : extract_files(); break;
     }
 }
 

@@ -4,7 +4,7 @@
 void print_files(vector<string> files){
     vector<string>::iterator iter;
     for(iter = files.begin(); iter < files.end(); iter++){
-        cout << *iter << "\n" << endl;
+        cout << *iter << endl;
     }
 }
 

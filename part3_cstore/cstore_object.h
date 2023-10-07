@@ -35,15 +35,15 @@ class CStoreObject
         void add_files();
         void extract_files();
 
-        void read_metadata(ifstream *, char *);
         void make_metadata(vector<char> *buf);
-        int parse_metadata(char *md, int *num_files);
+        vector<char> read_metadata(vector<char> *md);
+        void parse_metadata(vector<char> md);
 
-        void make_file_list(ifstream *file, int num_blocks, int num_files);
         void pad_buffer(vector<char> *buf, int len);
+        void wrongfully_detected_end(vector<char> *buf, int);
 
         void my_encrypt_metadata(vector<char> *buf);
-        void my_decrypt_metadata(vector<char> *buf);
+        vector<char> my_decrypt_metadata(vector<char> buf);
 
         void add_file_blocks(vector<char> *buf, int);
         Mode determine_mode(string);
