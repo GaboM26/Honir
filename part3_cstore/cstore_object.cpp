@@ -117,6 +117,7 @@ void CStoreObject::parse_metadata(vector<char> md){
     char *filler = buff;
     vector<char>::iterator iter;
     for(iter=md.begin(); iter<md.end(); iter++){
+        //retrieving numfiles
         if(*iter == '%'){
             *filler = '\0';
             break ;
@@ -133,6 +134,7 @@ void CStoreObject::parse_metadata(vector<char> md){
     filler = buff;
     int i;
     for(i=0; i<numfiles && iter!=md.end(); iter++){
+        //retrieving actual file names
         if(*iter == '%'){
             *filler = '\0';
             string str(buff);
@@ -140,7 +142,9 @@ void CStoreObject::parse_metadata(vector<char> md){
             filler = buff;
             i++;
         }
-        *filler++ = *iter;
+        else{
+            *filler++ = *iter;
+        }
     }
     if(i != numfiles){
         err = true;
