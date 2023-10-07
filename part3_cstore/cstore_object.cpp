@@ -133,7 +133,6 @@ void CStoreObject::add_file_blocks(vector<char> *buff, int totalbytes){
 }
 
 void CStoreObject::make_metadata(vector<char> *buff){
-    //TODO make_metadata
     int file_num = files.size();
     int total_bytes = 0;
     int num_blocks, pad_len;
@@ -170,8 +169,24 @@ void fill_buff_files(vector<char> *buff){
 
 }
 
-void my_encrypt(vector<char> *buf, int offset){
-    //TODO: confidentiality
+void CStoreObject::my_encrypt_metadata(vector<char> *buf){
+    string temp_name = archive_name + "_temp.txt";
+    if(!err)
+        write_data_to_file(temp_name, *buf);
+
+    //For this "public" information (ie. returned from list)
+    //just encrypt using archive_name as key
+    auto encrypted = encrypt_file(temp_name, archive_name);
+    buf->clear();
+    buf->resize(AES_BLOCK_SIZE + encrypted.ciphertext.size());
+    memcpy((char *) buf->data(), encrypted.IV, AES_BLOCK_SIZE);
+    memcpy((char *) buf->data()+AES_BLOCK_SIZE, 
+        encrypted.ciphertext.data(), encrypted.ciphertext.size());
+    
+    if(remove(temp_name.c_str())){
+        err = true;
+        err_msg = "error: could not remove temp file";
+    }
 
 }
 
@@ -182,7 +197,7 @@ void CStoreObject::add_files(){
         err_msg = "error: archive already exists, not supported";
     }
     make_metadata(&buff);
-    //my_encrypt(&buff, 0);
+    my_encrypt_metadata(&buff);
     fill_buff_files(&buff); //adds files and encrypts
     make_MAC(&buff); //adds a MAC
     

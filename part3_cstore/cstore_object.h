@@ -42,8 +42,8 @@ class CStoreObject
         void make_file_list(ifstream *file, int num_blocks, int num_files);
         void pad_buffer(vector<char> *buf, int len);
 
-        void my_encrypt(vector<char> *buf, int offset);
-        void my_decrypt(vector<char> *buf, int offset);
+        void my_encrypt_metadata(vector<char> *buf);
+        void my_decrypt_metadata(vector<char> *buf);
 
         void add_file_blocks(vector<char> *buf, int);
         Mode determine_mode(string);
