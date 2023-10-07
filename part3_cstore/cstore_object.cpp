@@ -293,13 +293,15 @@ vector<char> CStoreObject::get_file_from_buff(vector<char> *data, string passwor
 
 }
 
-void CStoreObject::parse_and_extract(vector<char> data, int *inds){
+void CStoreObject::parse_and_extract(vector<char> data, int *inds, int inds_len){
     vector<char> curr_file;
-
+    int extract_count = 0;
     for(uint64_t i=0; i<files_in_archive.size(); i++){
         curr_file = get_file_from_buff(&data, password);
-        if((uint64_t)*inds == i){
+        if(extract_count != inds_len && (uint64_t)*inds == i){
             write_data_to_file(files_in_archive[i] + "_extract.txt", curr_file);
+            inds++;
+            extract_count++;
         }
     }
 }
@@ -323,7 +325,7 @@ void CStoreObject::extract_files(){
     get_index_array(indices);
 
     if(!err)
-        parse_and_extract(files_data, indices);
+        parse_and_extract(files_data, indices, files.size());
 
 }
 

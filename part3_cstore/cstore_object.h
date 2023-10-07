@@ -51,7 +51,7 @@ class CStoreObject
         void fill_buff_files(vector<char> *buff);
 
         void get_index_array(int *);
-        void parse_and_extract(vector<char> , int *);
+        void parse_and_extract(vector<char> , int *, int);
         vector<char> get_file_from_buff(vector<char> *data, string password);
 
         Mode determine_mode(string);
