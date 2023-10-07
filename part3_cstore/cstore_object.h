@@ -11,6 +11,8 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+
 
 using namespace std;
 
@@ -24,7 +26,7 @@ class CStoreObject
         std::string password;
         std::string archive_name;
         string err_msg;
-        vector<string> retval;
+        vector<string> files_in_archive;
         bool err;
 
         void make_MAC(vector<char> *buf);
@@ -37,7 +39,7 @@ class CStoreObject
 
         void make_metadata(vector<char> *buf);
         vector<char> read_metadata(vector<char> *md);
-        void parse_metadata(vector<char> md);
+        int parse_metadata(vector<char> md);
 
         void pad_buffer(vector<char> *buf, int len);
         void wrongfully_detected_end(vector<char> *buf, int);
@@ -48,6 +50,9 @@ class CStoreObject
 
         void add_file_blocks(vector<char> *buf, int);
         void fill_buff_files(vector<char> *buff);
+
+        void get_index_array(int *);
+
         Mode determine_mode(string);
 
     public:

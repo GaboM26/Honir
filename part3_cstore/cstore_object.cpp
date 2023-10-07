@@ -67,7 +67,7 @@ bool CStoreObject::has_retval(){
 }
 
 vector<string> CStoreObject::get_retval(){
-    return retval;
+    return files_in_archive;
 }
 
 void CStoreObject::get_hash(char *buf){
@@ -111,7 +111,7 @@ vector<char> CStoreObject::read_metadata(vector<char> *data){
 
 }
 
-void CStoreObject::parse_metadata(vector<char> md){
+int CStoreObject::parse_metadata(vector<char> md){
     //TODO: make list and place in retval
     char buff[20]; //file_character names > 20
     char *filler = buff;
@@ -138,7 +138,7 @@ void CStoreObject::parse_metadata(vector<char> md){
         if(*iter == '%'){
             *filler = '\0';
             string str(buff);
-            retval.push_back(str);
+            files_in_archive.push_back(str);
             filler = buff;
             i++;
         }
@@ -150,6 +150,7 @@ void CStoreObject::parse_metadata(vector<char> md){
         err = true;
         err_msg = "error: Data files not found, possible tampering";
     }
+    return numfiles;
 }
 
 void CStoreObject::list_files(){
@@ -265,6 +266,7 @@ void CStoreObject::add_files(){
     if(file_exists(archive_name)){
         err = true;
         err_msg = "error: archive already exists, not supported";
+        return ;
     }
     make_metadata(&buff);
     my_encrypt_metadata(&buff);
@@ -277,9 +279,40 @@ void CStoreObject::add_files(){
         write_data_to_file(archive_name, buff);
 }
 
+void CStoreObject::get_index_array(int *ind){
+    memset(ind, -1, files.size());
+    for(uint64_t i=0; i<files.size(); i++){
+        for(uint64_t j=0; j<files_in_archive.size(); j++){
+            if(files[i] == files_in_archive[j])
+                ind[i] = j;
+        }
+        if(ind[i] == -1){
+            err = true;
+            err_msg = "error: file(s) not found in archive";
+            return ;
+        }
+    }
+    sort(ind, ind+files.size());
+}
+
 void CStoreObject::extract_files(){
     //TODO: Unencrypt archive's files
+    if(!file_exists(archive_name)){
+        err = true;
+        err_msg = "error: archive doesn't exist";
+        return ;
+    }
+    vector<char> files_data = get_data_from_file(archive_name);
+    vector<char> metadata = read_metadata(&files_data);
+    uint64_t numfiles = parse_metadata(metadata);
 
+    if(numfiles < files.size()){
+        err = true;
+        err_msg = "error: file(s) not in archive";
+        return ;
+    }
+    int indices[files.size()];
+    get_index_array(indices);
 
 }
 
