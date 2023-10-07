@@ -27,18 +27,26 @@ class CStoreObject
         vector<string> retval;
         bool err;
 
+        void make_MAC(vector<char> *buf);
         void get_hash(char *buf);
         bool verify_hash(ifstream file);
+
         void list_files();
         void add_files();
         void extract_files();
+
         void read_metadata(ifstream *, char *);
         void make_metadata(vector<char> *buf);
         int parse_metadata(char *md, int *num_files);
+
         void make_file_list(ifstream *file, int num_blocks, int num_files);
         void pad_buffer(vector<char> *buf, int len);
+
+        void my_encrypt(vector<char> *buf, int offset);
+        void my_decrypt(vector<char> *buf, int offset);
+
+        void add_file_blocks(vector<char> *buf, int);
         Mode determine_mode(string);
-        void make_hash(vector<char> *buf);
 
     public:
         

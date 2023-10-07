@@ -1,5 +1,12 @@
 #include "cstore_object.h"
 
+void str_fill_buff(vector<char> *buf, string str){
+    const char *c_str;
+    for(c_str = str.c_str(); *c_str!='\0'; c_str++){
+        buf->push_back(*c_str);
+    }
+}
+
 bool file_exists(string filename){
     ifstream file(filename.c_str());
     return file.good();
@@ -114,9 +121,19 @@ void CStoreObject::pad_buffer(vector<char> *buff, int len){
     }
 }
 
+void CStoreObject::add_file_blocks(vector<char> *buff, int totalbytes){
+    vector<string>::iterator iter;
+    for(iter = files.begin(); iter < files.end(); iter++){
+        string curr = *iter;
+        str_fill_buff(buff, curr);
+        buff->push_back('%');
+    }
+    int mustpad = AES_BLOCK_SIZE - totalbytes%AES_BLOCK_SIZE;
+    pad_buffer(buff, mustpad);
+}
+
 void CStoreObject::make_metadata(vector<char> *buff){
     //TODO make_metadata
-    const char *ptr;
     int file_num = files.size();
     int total_bytes = 0;
     int num_blocks, pad_len;
@@ -125,37 +142,36 @@ void CStoreObject::make_metadata(vector<char> *buff){
     for(iter = files.begin(); iter < files.end(); iter++){
         string curr = *iter;
         int strlen = curr.size();
-        total_bytes += strlen;
+        total_bytes += strlen+1;
     }
     num_blocks = (total_bytes+AES_BLOCK_SIZE)/AES_BLOCK_SIZE;
     nb_str = to_string(num_blocks);
     fn_str = to_string(file_num);
-    for(ptr = fn_str.c_str(); *ptr != '\0'; ptr++){
-        //first the number of files written
-        buff->push_back(*ptr);
-    }
+    str_fill_buff(buff, fn_str);
     buff->push_back('%'); //separator
-    for(ptr = nb_str.c_str(); *ptr != '\0'; ptr++){
-        //number of blocks that contains titles
-        buff->push_back(*ptr);
-    }
+    str_fill_buff(buff, nb_str);
+
     pad_len = AES_BLOCK_SIZE - nb_str.size() - 1 - fn_str.size();
-    printf("%d\n", pad_len);
     if(pad_len < 0){
         err = true;
         err_msg = "exceeded metadata length";
     }
     pad_buffer(buff, pad_len);
-    printf("%ld\n", buff->size());
+    add_file_blocks(buff, total_bytes);
 }
 
-void CStoreObject::make_hash(vector<char> *buff){
+void CStoreObject::make_MAC(vector<char> *buff){
     //TODO: make hash out of complete buff (integrity)
 
 }
 
 void fill_buff_files(vector<char> *buff){
     //TODO: append buff files to vector
+
+}
+
+void my_encrypt(vector<char> *buf, int offset){
+    //TODO: confidentiality
 
 }
 
@@ -166,8 +182,9 @@ void CStoreObject::add_files(){
         err_msg = "error: archive already exists, not supported";
     }
     make_metadata(&buff);
-    fill_buff_files(&buff);
-    make_hash(&buff);
+    //my_encrypt(&buff, 0);
+    fill_buff_files(&buff); //adds files and encrypts
+    make_MAC(&buff); //adds a MAC
     
     if(!err)
         write_data_to_file(archive_name, buff);
