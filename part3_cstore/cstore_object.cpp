@@ -75,12 +75,6 @@ void CStoreObject::get_hash(char *buf){
 
 }
 
-bool CStoreObject::verify_hash(ifstream file){
-    //TODO: verify hash with current hash of file
-    return true;
-
-}
-
 void CStoreObject::wrongfully_detected_end(vector<char> *md, int fix){
     for(int i=0; i<fix; i++){
         md->push_back('\0');
@@ -101,10 +95,6 @@ int CStoreObject::parse_metadata(vector<char> md){
     }
     iter++;
     string temp(buff);
-    if(temp.size()>16){
-        err =true;
-        err_msg="error: couldnt recover metadata, data corrupted";
-    }
     int numfiles = stoi(temp);
     filler = buff;
     int i;
@@ -171,9 +161,37 @@ void CStoreObject::make_metadata(vector<char> *buff){
     add_file_blocks(buff, total_bytes);
 }
 
-void CStoreObject::make_MAC(vector<char> *buff){
+void CStoreObject::make_MAC(vector<char> *buf){
     //TODO: make hash out of complete buff (integrity)
+    string temp_name = archive_name + "_temp.txt";
+    char hmac[SHA256_BLOCK_SIZE];
+    if(!err)
+        write_data_to_file(temp_name, *buf);
+    bool success = generate_hmac(temp_name.c_str(), password.c_str(),
+                    password.size(), hmac);
+    if(!success){
+        err = true;
+        err_msg = "error: couldn't generate hmac";
+    }
+    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+        buf->push_back(hmac[i]);
+    }
 
+    if(remove(temp_name.c_str())){
+        err = true;
+        err_msg = "error: could not remove temp file";
+    }
+
+}
+
+void CStoreObject::make_password_hash(vector<char> *buf){
+    char hash_pas[SHA256_BLOCK_SIZE];
+    gen_key(password, hash_pas);
+    //One extra hash to not store key (or previous steps to key)
+    hash_sha256((BYTE *)hash_pas, (BYTE *)hash_pas, SHA256_BLOCK_SIZE);
+    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+        buf->push_back(hash_pas[i]);
+    }
 }
 
 void CStoreObject::push_e_to_buf(vector<char> *buf, encrypted_blob e){
@@ -236,6 +254,7 @@ void CStoreObject::my_encrypt_metadata(vector<char> *buf){
 }
 
 void CStoreObject::add_files(){
+    //TODO: add support for adding files
     vector<char> buff;
     if(file_exists(archive_name)){
         err = true;
@@ -247,6 +266,7 @@ void CStoreObject::add_files(){
     pad_buffer(&buff, AES_BLOCK_SIZE);
     
     fill_buff_files(&buff); //adds files and encrypts
+    make_password_hash(&buff); //Adds hashed password to end
     make_MAC(&buff); //adds a MAC
     
     if(!err)
@@ -299,13 +319,52 @@ void CStoreObject::parse_and_extract(vector<char> data, int *inds, int inds_len)
     for(uint64_t i=0; i<files_in_archive.size(); i++){
         curr_file = get_file_from_buff(&data, password);
         if(extract_count != inds_len && (uint64_t)*inds == i){
-            write_data_to_file(files_in_archive[i] + "_extract.txt", curr_file);
-            inds++;
+            write_data_to_file(files_in_archive[i], curr_file);
             extract_count++;
+            inds++;
         }
     }
 }
 
+bool CStoreObject::is_right_password(vector<char> *fd){
+    //TODO: verify password
+    char pass[SHA256_BLOCK_SIZE];
+    vector<char>::iterator iter = fd->end();
+    iter -= SHA256_BLOCK_SIZE;
+
+    gen_key(password, pass);
+    hash_sha256((BYTE *) pass, (BYTE *) pass, SHA256_BLOCK_SIZE);
+
+    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+        if(pass[i] != *iter++){
+            return false;
+        }
+    }
+    fd -> erase(fd->end()-SHA256_BLOCK_SIZE,fd->end());
+    return true;
+}
+
+bool CStoreObject::verify_hmac(vector<char> *fd){
+    // TODO: verifies hmac
+    char old_hmac[SHA256_BLOCK_SIZE];
+    char *filler = old_hmac;
+    vector<char>::iterator iter = fd->end();
+    for(iter -= SHA256_BLOCK_SIZE; iter<fd->end(); iter++){
+        *filler++ = *iter;
+    }
+    fd -> erase(fd->end()-SHA256_BLOCK_SIZE,fd->end());
+
+    make_MAC(fd);
+    iter = fd->end() - SHA256_BLOCK_SIZE;
+
+    for(int i=0; i<SHA256_BLOCK_SIZE; i++){
+        if(old_hmac[i] != *iter++){
+            return false;
+        }
+    }
+    fd -> erase(fd->end()-SHA256_BLOCK_SIZE,fd->end());
+    return true;
+}
 void CStoreObject::extract_files(){
     if(!file_exists(archive_name)){
         err = true;
@@ -313,12 +372,22 @@ void CStoreObject::extract_files(){
         return ;
     }
     vector<char> files_data = get_data_from_file(archive_name);
+    if(!verify_hmac(&files_data)){
+        err = true; 
+        err_msg = "error: file tampered and/or wrong password";
+        return ;
+    }
     vector<char> metadata = get_file_from_buff(&files_data, archive_name);
     uint64_t numfiles = parse_metadata(metadata);
 
     if(numfiles < files.size()){
         err = true;
         err_msg = "error: file(s) not in archive";
+        return ;
+    }
+    else if(!is_right_password(&files_data)){
+        err = true;
+        err_msg = "error: password provided does not match this archives password";
         return ;
     }
     int indices[files.size()];

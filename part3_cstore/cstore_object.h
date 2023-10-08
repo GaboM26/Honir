@@ -31,7 +31,9 @@ class CStoreObject
 
         void make_MAC(vector<char> *buf);
         void get_hash(char *buf);
-        bool verify_hash(ifstream file);
+        void make_password_hash(vector<char> *);
+        bool is_right_password(vector<char> *fd);
+        bool verify_hmac(vector<char> *fd);
 
         void list_files();
         void add_files();
