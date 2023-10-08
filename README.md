@@ -80,7 +80,8 @@ highly effective solution to prevent core dumped errors.
 
 All files are protected utilizing input password.
 
-Metadata also encrypted for added security, even though information kept here is technically not too important.
+Metadata also encrypted for added security, even though 
+information kept here is technically not too important.
 Key for encryption is simply archive name. This choice
 was made to protect against the "less smart" attackers
 that may want to take a peak at the contents of the 
@@ -89,3 +90,11 @@ these attackers. For the smartest attacker, even if
 they were to "crack the code", no vital information would be 
 leaked, since it only contains data that can be received
 by running ./cstore list.
+
+# other implementation details
+
+add will create an archive and doesn't add more files to an existing archive
+just as lab spec says. Furthermore, for extract, all the archive is read into
+memory and then moved around from there. Some "still reachable" blocks
+were detected coming from cstore_args.cpp code, which is all the scaffolding
+provided by teaching staff. No other data leaks detected.

@@ -260,7 +260,6 @@ void CStoreObject::my_encrypt_metadata(vector<char> *buf){
 }
 
 void CStoreObject::add_files(){
-    //TODO: add support for adding files
     vector<char> buff;
     if(file_exists(archive_name)){
         err = true;
