@@ -31,7 +31,14 @@ IV: for every file, the respective IV.
 FILES: Encrypted file follows
 SEPARATOR: AES_BLOCK_SIZE of null bytes.
 
+PASSWORD: 10001 hash of password stored (32 bytes). used
+as a further check of integrity.
+
 MAC: HMAC of complete file at the end (32 bytes)
+
+ARCHIVE SIGNIFIER: '&' applied to the end (1 byte). Serves
+as a flag to show this is an archive (prevents 99.9% of 
+core dumps in a very simple manner).
 
 # Encryption:
 
@@ -44,11 +51,30 @@ which ecb mode may bring out).
 
 # Integrity 
 
-Integrity ensured via a MAC appended at the end of the file.
+Integrity ensured via a HMAC appended at the end of the file.
 HMAC utilized is that developed in part 1. In other words,
 hash function used for HMAC is SHA-256.
 
-Extra sanity checks, such as that the number of files listed in metadata matches with the number of files found, are utilized to add a small extra layer to integrity.
+Extra sanity checks, such as that the number of files listed
+in metadata matches with the number of files found, are 
+utilized to add a small extra layer to integrity.
+
+Furthermore, 10001 hash of password is stored at the end of all other files. 
+10001 chosen because 10000 hash is used as a key. If only
+one hash is taken, attacker could in theory do 9999 more hashes
+and get access to data. Getting 10001 hash ensures this will 
+never happen.
+
+# Bug prevention
+
+Attached '&' at end of file is a very easy way to verify a
+file is an archive. Although, in theory, a file could happen to
+finish with a '&', it is highly unlikely its the case. 
+If most files were randomly made (that they are not), they
+would have a 1/256 chance of ending with a '&'. However, most
+textfiles, codefiles, and other typical files don't finish
+with an odd character such as &, which makes this a simple, yet
+highly effective solution to prevent core dumped errors.
 
 # Keys:
 
