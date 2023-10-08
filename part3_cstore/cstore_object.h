@@ -30,9 +30,9 @@ class CStoreObject
         bool err;
 
         void make_MAC(vector<char> *buf);
-        void get_hash(char *buf);
         void make_password_hash(vector<char> *);
         bool is_right_password(vector<char> *fd);
+        bool is_archive(vector<char> *);
         bool verify_hmac(vector<char> *fd);
 
         void list_files();
