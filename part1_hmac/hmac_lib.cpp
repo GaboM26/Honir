@@ -84,7 +84,7 @@ void write_data_to_file(std::string filename, std::vector<char> data)
         outfile.close();
 }
 
-char *prep_pass(const char *password, unsigned int *password_length){
+char *prep_str(const char *password, unsigned int *password_length){
     // TODO implement padding
     if(*password_length <= SHA256_DATA_SIZE)
         return (char *) password;
@@ -122,7 +122,7 @@ bool generate_hmac(const char * filename, const char * password,
     unsigned char opad[SHA256_DATA_SIZE+1];
     unsigned int plen_actual = password_length;
 
-    char *key = prep_pass(password, &plen_actual);
+    char *key = prep_str(password, &plen_actual);
 
     bzero(ipad, sizeof(ipad));
     bzero(opad, sizeof(opad));
@@ -134,9 +134,19 @@ bool generate_hmac(const char * filename, const char * password,
         opad[i] ^= 0x5c;
     }
 
+    /* check if we are hashing from cli to skip file reading altogether*/
+    if(hash_from_cli){
+        unsigned int content_size = strlen(filename);
+        char *content = prep_str(filename, &content_size);
+        sha256_init(&ctx);
+        sha256_update(&ctx,(BYTE *) ipad, SHA256_DATA_SIZE);
+        sha256_update(&ctx, (BYTE *) content, content_size);
+        sha256_final(&ctx, (BYTE *) dest);
+        goto hash;
+    }
+
     // a brief example of file IO in C++
     // you don't need to use it if you prefer C
-
     cur_file.open( filename, std::ios::in | std::ios::binary |std::ios::ate );
   
     if (!cur_file.is_open()) {
@@ -157,6 +167,7 @@ bool generate_hmac(const char * filename, const char * password,
     }
     sha256_final(&ctx, (BYTE *) dest);
 
+hash:
     sha256_init(&ctx);
     sha256_update(&ctx, opad, SHA256_DATA_SIZE);
     sha256_update(&ctx, (BYTE *) dest, SHA256_BLOCK_SIZE);

@@ -174,7 +174,7 @@ void CStoreObject::make_MAC(vector<char> *buf){
     if(!err)
         write_data_to_file(temp_name, *buf);
     bool success = generate_hmac(temp_name.c_str(), password.c_str(),
-                    password.size(), hmac);
+                    password.size(), hmac, false);
     if(!success){
         err = true;
         err_msg = "error: couldn't generate hmac";
