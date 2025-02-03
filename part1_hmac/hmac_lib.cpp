@@ -137,7 +137,13 @@ bool generate_hmac(const char * filename, const char * password,
     /* check if we are hashing from cli to skip file reading altogether*/
     if(hash_from_cli){
         unsigned int content_size = strlen(filename);
-        char *content = prep_str(filename, &content_size);
+
+        if(content_size > SHA256_DATA_SIZE){
+            std::cerr << "Error: hash_from_cli does not support long cli input. Consider using file" << std::endl;
+            success = false;
+            goto exit;
+        }
+        char *content = (char *) filename;
         sha256_init(&ctx);
         sha256_update(&ctx,(BYTE *) ipad, SHA256_DATA_SIZE);
         sha256_update(&ctx, (BYTE *) content, content_size);
