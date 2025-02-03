@@ -11,7 +11,8 @@ void create_hmac(HMACArgs args)
                 args.get_sourcefile().data(),
                 password.data(),
                 password.size(),
-                (char *) final_hash.data()
+                (char *) final_hash.data(),
+                args.get_hash_from_cli()
                 );
         if (success) {
                 if (args.get_outfile() == "STDOUT") {
@@ -36,7 +37,8 @@ void verify_hmac(HMACArgs args)
                 args.get_sourcefile().data(),
                 password.data(),
                 password.size(),
-                (char *) final_hash.data()
+                (char *) final_hash.data(),
+                args.get_hash_from_cli()
                 );
         if (success) {
                 char * buff_hash = sprint_hex(final_hash.data(), final_hash.size());

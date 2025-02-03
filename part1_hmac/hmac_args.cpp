@@ -23,6 +23,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
                                 args->mode = "verify";
                         }
                         break;
+                case 'h':
+                        args -> hash_from_cli = true;
+                        break;
                 case ARGP_KEY_ARG: // source_file
                         if(state->arg_num > 0) {
                                 argp_usage(state);
@@ -75,6 +78,13 @@ HMACArgs::HMACArgs(int argc, char ** argv)
                 {"outfile", 'o', "filename", 
                         0,  "File to write hmac to as binary;"
                         " otherwise prints to stdout as hex" },
+                {
+                        "hash-from-cli",
+                        'h',
+                        0,
+                        0,
+                        "Hash input from cli instead of reading source_file"
+                },
                 { 0 }
         };
         args.mode = "create";
@@ -115,4 +125,9 @@ std::string HMACArgs::get_mode()
 std::string HMACArgs::get_verify_hash()
 {
         return args.verify_hash;
+}
+
+bool HMACArgs::get_hash_from_cli()
+{
+        return args.hash_from_cli;
 }

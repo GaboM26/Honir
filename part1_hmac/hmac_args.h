@@ -11,6 +11,7 @@
 typedef struct {
     std::string password;
     std::string outfile;
+    bool hash_from_cli;
     std::string source_file;
     std::string verify_hash;
     std::string mode;
@@ -30,6 +31,7 @@ class HMACArgs
         std::string get_sourcefile();
         std::string get_verify_hash();
         std::string get_mode();
+        bool get_hash_from_cli();
 
         HMACArgs(int argc, char ** argv);
 };

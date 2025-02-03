@@ -107,7 +107,7 @@ char *prep_pass(const char *password, unsigned int *password_length){
  * @return false - an error occurred 
  */
 bool generate_hmac(const char * filename, const char * password, 
-        unsigned int password_length, char * dest)
+        unsigned int password_length, char * dest, bool hash_from_cli)
 {
     // TODO: rewrite this function to be correct
 

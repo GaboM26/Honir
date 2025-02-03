@@ -15,7 +15,7 @@ void hash_sha256(const BYTE * input, BYTE * output, int in_len);
 void print_hex(const char* byte_arr, int len);
 void print_vector_as_hex(std::vector<char> bytes);
 bool generate_hmac(const char * filename, const char * password, 
-        unsigned int password_length, char * dest);
+        unsigned int password_length, char * dest, bool hash_from_cli);
 void write_data_to_file(std::string filename, std::vector<char> data);
 char *sprint_hex(const char* byte_arr, uint32_t len);
 
