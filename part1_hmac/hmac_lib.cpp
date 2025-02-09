@@ -79,6 +79,10 @@ void print_vector_as_hex(std::vector<char> bytes)
 void write_data_to_file(std::string filename, std::vector<char> data)
 {
         std::ofstream outfile;
+        if (filename == "stdout" || filename == "") {
+            std::cout.write(data.data(), data.size());
+            return;
+        }
         outfile.open(filename,std::ios::binary|std::ios::out);
         outfile.write(data.data(),data.size());
         outfile.close();
