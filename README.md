@@ -1,12 +1,7 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/xGB-fK-g)
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-718a45dd9cf7e7f842a935f5ebbe5719a5e09af4491e668f4dbf3b35d5cca122.svg)](https://classroom.github.com/online_ide?assignment_repo_id=12097733&assignment_repo_type=AssignmentRepo)
-# HW1
- 
-## Reminder:
+# Project Honir
 
-* Please remember to place your UNI in `UNI.txt`. Do not put anything else in this file
-
-* Please remember to comlete `references.txt`
+*Honir* - In Norse Mythology, Hœnir is a god of the Aesir tribe. He is associated with mystery, wisdom, and silence. he often appears in myths regarding the creation of humanity. 
+Being Odin's brother, Hœnir is more than just a secondary or a passing figure in Norse Mythology. He is one of the few surviving Gods after Ragnarok.
  
 ## Instructions:
 
