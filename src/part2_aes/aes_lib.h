@@ -1,8 +1,8 @@
 #ifndef AES_LIB_H
 #define AES_LIB_H
 
-#include "../crypto_lib/sha256.h"
-#include "../crypto_lib/aes.h"
+#include "../../crypto_lib/sha256.h"
+#include "../../crypto_lib/aes.h"
 #include "../part1_hmac/hmac_lib.h"
 #include <stdio.h>
 #include <vector>

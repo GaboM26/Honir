@@ -1,7 +1,7 @@
 #ifndef HMAC_LIB_H
 #define HMAC_LIB_H
 
-#include "../crypto_lib/sha256.h"
+#include "../../crypto_lib/sha256.h"
 #include <stdio.h>
 #include <vector>
 #include <string.h>
