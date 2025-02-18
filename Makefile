@@ -5,13 +5,13 @@ export CC
 export CFLAGS
 export OUTPUT_DIR
 
-PART1_DIR=src/part1_hmac
+PART1_DIR=src/sha256_hmac
 PART1_FILES=$(PART1_DIR)/hmac.cpp $(PART1_DIR)/hmac_lib.cpp $(PART1_DIR)/hmac_args.cpp crypto_lib/sha256.c
 
-PART2_DIR=src/part2_aes
+PART2_DIR=src/aes
 PART2_FILES=$(PART2_DIR)/aes_lib.cpp $(PART2_DIR)/aes_args.cpp crypto_lib/sha256.c crypto_lib/aes.c $(PART1_DIR)/hmac_lib.cpp
 
-PART3_DIR=src/part3_cstore
+PART3_DIR=src/crypto_store
 PART3_FILES=$(PART2_DIR)/aes_lib.cpp crypto_lib/sha256.c crypto_lib/aes.c $(PART1_DIR)/hmac_lib.cpp $(PART3_DIR)/cstore_args.cpp $(PART3_DIR)/cstore.cpp $(PART3_DIR)/cstore_object.cpp
 
 .PHONY: all part1 part2 part3 test_part1 test_part2 test_part3 build clean
