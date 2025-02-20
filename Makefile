@@ -56,5 +56,5 @@ test: test_part1 test_part2 test_part3
 clean:
 	(rm hmac aes-encrypt aes-decrypt cstore 2>/dev/null|| true)
 
-all: build test
+all: clean build test
 
