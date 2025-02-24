@@ -199,7 +199,7 @@ void gen_key(std::string pass_str, char *key){
     }
 }
 
-encrypted_blob encrypt_file(std::string filename, std::string password)
+encrypted_blob encrypt_file(std::string user_input, std::string password)
 {
     char IV[AES_BLOCK_SIZE];
     encrypted_blob return_value;
@@ -212,7 +212,7 @@ encrypted_blob encrypt_file(std::string filename, std::string password)
     char key[SHA256_BLOCK_SIZE];
     gen_key(password, key); 
 
-    std::vector<char> plaintext = get_data_from_file(filename);
+    std::vector<char> plaintext = get_data_from_file(user_input);
 
     char * ciphertext = NULL;
     uint64_t ciphertext_length = 0;
@@ -235,7 +235,7 @@ encrypted_blob encrypt_file(std::string filename, std::string password)
     return return_value;
 }
 
-std::vector<char> decrypt_file(std::string filename, std::string password)
+std::vector<char> decrypt_file(std::string user_input, std::string password)
 {
     std::vector<char> return_vector;
     char IV[AES_BLOCK_SIZE];
@@ -243,7 +243,7 @@ std::vector<char> decrypt_file(std::string filename, std::string password)
     char key[SHA256_BLOCK_SIZE];
     gen_key(password, key);
 
-    std::vector<char> ciphertext = get_data_from_file(filename);
+    std::vector<char> ciphertext = get_data_from_file(user_input);
 
     if (ciphertext.size() > 16) {
         memcpy(IV,ciphertext.data(),AES_BLOCK_SIZE);
