@@ -54,7 +54,7 @@ hmac_tests = [
 aes_decrypt_tests = [
         HomeworkTestCase( # help message
             cmd = "./{} --help".format(AES_DECRYPT_BIN),
-            expected_output = [b'Usage: aes-decrypt [OPTION...] encrypted_in plaintext_out\r\n', b'Decrypt a file using AES-CBC\r\n', b'\r\n', b'  -p, --password=password    The password to use; will prompt if not given\r\n', b'  -?, --help                 Give this help list\r\n', b'      --usage                Give a short usage message\r\n', b'\r\n', b'Mandatory or optional arguments to long options are also mandatory or optional\r\n', b'for any corresponding short options.\r\n'],
+            expected_output = [b'Usage: aes-decrypt [OPTION...] encrypted_in plaintext_out\r\n', b'Decrypt a file using AES-CBC\r\n', b'\r\n', b'  -i, --input-from-cli       Hash input from cli instead of reading\r\n', b'                             source_file', b'  -p, --password=password    The password to use; will prompt if not given\r\n', b'  -?, --help                 Give this help list\r\n', b'      --usage                Give a short usage message\r\n', b'\r\n', b'Mandatory or optional arguments to long options are also mandatory or optional\r\n', b'for any corresponding short options.\r\n'],
             summary = "get help statement"
         ),
         HomeworkTestCase( # decrypt a file
@@ -69,7 +69,7 @@ aes_decrypt_tests = [
 aes_encrypt_tests = [
         HomeworkTestCase( # help message
             cmd = "./{} --help".format(AES_ENCRYPT_BIN),
-            expected_output = [b'Usage: aes-encrypt [OPTION...] plaintext_in encrypted_out\r\n', b'Encrypt a file using AES-CBC\r\n', b'\r\n', b'  -p, --password=password    The password to use; will prompt if not given\r\n', b'  -?, --help                 Give this help list\r\n', b'      --usage                Give a short usage message\r\n', b'\r\n', b'Mandatory or optional arguments to long options are also mandatory or optional\r\n', b'for any corresponding short options.\r\n'],
+            expected_output = [b'Usage: aes-encrypt [OPTION...] plaintext_in encrypted_out\r\n', b'Encrypt a file using AES-CBC\r\n', b'\r\n', b'  -i, --input-from-cli       Hash input from cli instead of reading\r\n', b'                             source_file', b'  -p, --password=password    The password to use; will prompt if not given\r\n', b'  -?, --help                 Give this help list\r\n', b'      --usage                Give a short usage message\r\n', b'\r\n', b'Mandatory or optional arguments to long options are also mandatory or optional\r\n', b'for any corresponding short options.\r\n'],
             summary = "get help statement"
         ),
         HomeworkTestCase( # encrypt a file

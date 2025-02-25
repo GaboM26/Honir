@@ -16,7 +16,7 @@ typedef struct {
     std::string plaintext_file;
     std::string encrypted_file;
     unsigned short mode;
-    bool hash_from_cli;
+    bool input_from_cli;
 } arguments;
 
 class AESArgs 
@@ -30,7 +30,7 @@ class AESArgs
         std::string get_plaintext_file();
         std::string get_encrypted_file();
         unsigned short get_mode();
-        bool get_hash_from_cli();
+        bool get_input_from_cli();
         AESArgs(int argc, char ** argv, unsigned short mode);
 };
 

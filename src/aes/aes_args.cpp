@@ -27,8 +27,8 @@ parse_opt (int key, char *arg, struct argp_state *state)
                         }
                         
                         break;
-                case 'h':
-                        args -> hash_from_cli = true;
+                case 'i':
+                        args -> input_from_cli = true;
                         break;
                 case ARGP_KEY_END:
                         if(state->arg_num < 1) {
@@ -83,8 +83,8 @@ AESArgs::AESArgs(int argc, char ** argv, unsigned short mode)
                         "The password to use; will prompt if not given" // string documentation
                 },
                 {
-                        "hash-from-cli",
-                        'h',
+                        "input-from-cli",
+                        'i',
                         0,
                         0,
                         "Hash input from cli instead of reading source_file"
@@ -121,7 +121,7 @@ std::string AESArgs::get_encrypted_file()
         return args.encrypted_file;
 }
 
-bool AESArgs::get_hash_from_cli()
+bool AESArgs::get_input_from_cli()
 {
-        return args.hash_from_cli;
+        return args.input_from_cli;
 }
